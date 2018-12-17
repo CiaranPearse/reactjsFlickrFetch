@@ -1,6 +1,16 @@
 import React, { Component, Fragment } from "react";
 import { render } from "react-dom";
 import request from "superagent";
+import Masonry from 'react-masonry-component';
+
+import './styles.css';
+
+
+const masonryOptions = {
+    transitionDuration: 0
+};
+
+const imagesLoadedOptions = { background: '.my-bg-image-el' }
 
 class FlickrPhotos extends Component {
   constructor(props) {
@@ -12,6 +22,8 @@ class FlickrPhotos extends Component {
       hasMore: true,
       isLoading: false,
       users: [],
+      pageNumber: 1,
+      searchTerm: 'belvelly'
     };
 
     // Binds our scroll event handler
@@ -49,15 +61,23 @@ class FlickrPhotos extends Component {
   loadUsers = () => {
     this.setState({ isLoading: true }, () => {
       request
-        .get('https://randomuser.me/api/?results=10')
+        .get('https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=6347d99644f5a2b060c5559e70ecbfbd&tags=' + this.state.searchTerm + '&extras=description%2C+license%2C+date_upload%2C+date_taken%2C+owner_name%2C+icon_server%2C+original_format%2C+last_update%2C+geo%2C+tags%2C+o_dims%2C+views%2C+media%2C+path_alias%2C+url_sq%2C+url_t%2C+url_s%2C+url_q%2C+url_m%2C+url_n%2C+url_z%2C+url_c%2C+url_l%2C+url_o&per_page=20&page=' + this.state.pageNumber + '&format=json&nojsoncallback=1')
         .then((results) => {          
+          console.log(results)
+          const photoBatch = results.body.photos
+          console.log(photoBatch)
           // Creates a massaged array of user data
-          const nextUsers = results.body.results.map(user => ({
-            email: user.email,
-            name: Object.values(user.name).join(' '),
-            photo: user.picture.medium,
-            username: user.login.username,
-            uuid: user.login.uuid,
+          const nextUsers = photoBatch.photo.map(user => ({
+            photoId: user.id,
+            owner: user.owner,
+            farm: user.farm,
+            thumb: user.url_n,
+            full: 'fullPhoto',
+            title: 'title',
+            tags: 'tags',
+            tagLength: 'tagLength',
+            owner: 'owner',
+            date: 'dateTaken'
           }));
 
           // Merges the next users into our existing users
@@ -80,9 +100,10 @@ class FlickrPhotos extends Component {
            });
         })
     });
+    this.setState({ pageNumber: this.state.pageNumber + 1 })
   }
 
-  render() {
+  render() { 
     const {
       error,
       hasMore,
@@ -90,49 +111,35 @@ class FlickrPhotos extends Component {
       users,
     } = this.state;
 
+    const childElements = this.state.users.map(function(user){
+      return (
+        <div className="photoBox">
+          <img src={user.thumb} />
+          <p>{user.owner}</p>
+          <p>{user.farm}</p>
+          <p>{user.full}</p>
+          <p>{user.title}</p>
+          <p>{user.tags}</p>
+          <p>{user.tagLength}</p>
+          <p>{user.date}</p>
+        </div>
+      );
+    });
+    
     return (
-      <div>
-        <h1>Flickr Photos!</h1>
-        {users.map(user => (
-          <div key={user.username}>
-            <hr />
-            <div style={{ display: 'flex' }}>
-              <img
-                alt={user.username}
-                src={user.photo}
-                style={{
-                  borderRadius: '50%',
-                  height: 72,
-                  marginRight: 20,
-                  width: 72,
-                }}
-              />
-              <div>
-                <h2 style={{ marginTop: 0 }}>
-                  @{user.username}
-                </h2>
-                <p>Name: {user.name}</p>
-                <p>Email: {user.email}</p>
-              </div>
-            </div>
-          </div>
-        ))}
-        <hr />
-        {error &&
-          <div style={{ color: '#900' }}>
-            {error}
-          </div>
-        }
-        {isLoading &&
-          <div>Loading...</div>
-        }
-        {!hasMore &&
-          <div>You did it! You reached the end!</div>
-        }
-      </div>
-    );
+      <Masonry
+        className={'photoContainer'} // default ''
+        elementType={'div'} // default 'div'
+        options={masonryOptions} // default {}
+        disableImagesLoaded={false} // default false
+        updateOnEachImageLoad={false} // default false and works only if disableImagesLoaded is false
+        imagesLoadedOptions={imagesLoadedOptions} // default {}
+      >
+        {childElements}
+      </Masonry>
+      );
+    }
   }
-}
 
 const container = document.createElement("div");
 document.body.appendChild(container);

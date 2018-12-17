@@ -1,4 +1,20 @@
-.App {
-  font-family: sans-serif;
+#root {
   text-align: center;
+  margin: 0 auto;
+}
+
+.photoContainer {
+	border: 1px solid red;
+	margin: 0 auto;
+	text-align: center;
+}
+
+.photoBox {
+	border: 1px solid green;
+	margin: 10px;
+	max-width: 25%;
+}
+
+.photoBox img {
+	width: 100%;
 }
