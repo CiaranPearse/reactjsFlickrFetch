@@ -2,10 +2,11 @@ import React, { Component, Fragment } from "react";
 import { render } from "react-dom";
 import request from "superagent";
 import Masonry from 'react-masonry-component';
+import Moment from 'react-moment';
 
 import './styles.css';
 
-
+Moment.globalFormat = 'D/MMM/YYYY hh:mm A';
 const masonryOptions = {
     transitionDuration: 0
 };
@@ -20,6 +21,7 @@ class FlickrPhotos extends Component {
     // Sets up our initial state
     this.state = {
       error: false,
+      errorMsg: '',
       hasMore: true,
       isLoading: false,
       photos: [],
@@ -82,28 +84,43 @@ class FlickrPhotos extends Component {
         .get('https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=6347d99644f5a2b060c5559e70ecbfbd&tags=' + this.state.searchTerm + '&extras=description%2C+license%2C+date_upload%2C+date_taken%2C+owner_name%2C+icon_server%2C+original_format%2C+last_update%2C+geo%2C+tags%2C+o_dims%2C+views%2C+media%2C+path_alias%2C+url_sq%2C+url_t%2C+url_s%2C+url_q%2C+url_m%2C+url_n%2C+url_z%2C+url_c%2C+url_l%2C+url_o&per_page=20&page=' + this.state.currentPage + '&format=json&nojsoncallback=1')
         .then((results) => {          
           console.log(results)
+          let hasMore = true
+          let isError = false
+          let errorMsg = ''
+          console.log(results.body.stat)
+          if (results.body.stat === 'fail') {
+            isError = true
+            errorMsg = results.body.message
+            console.log('Should be FAIL')
+          }
           const photoBatch = results.body.photos
           console.log(photoBatch)
+          if (photoBatch.pages === this.state.currentPage) {
+            hasMore = false
+          }
+          console.log ('photos Found: ', photoBatch.total)
+          if (photoBatch.total === "0") {
+            isError = true
+            errorMsg = 'No Photos found'
+          }
+          console.log(isError)
+          console.log(photoBatch.photo[1].dateupload)
+          console.log(photoBatch.photo[1].dateupload.getFullYear)
           // Creates a massaged array of user data
           const nextPhotos = photoBatch.photo.map(photo => ({
             photoId: photo.id,
             owner: photo.owner,
-            farm: photo.farm,
             thumb: photo.url_n,
-            full: 'fullPhoto',
-            title: 'title',
-            tags: 'tags',
-            tagLength: 'tagLength',
-            owner: 'owner',
-            date: 'dateTaken'
+            full: photo.url_o,
+            title: photo.title,
+            tags: photo.tags.split(" ").join(', '),
+            date: photo.dateupload
           }));
 
-          // Merges the next photos into our existing photos
           this.setState({
-            // Note: Depending on the API you're using, this value may be
-            // returned as part of the payload to indicate that there is no
-            // additional data to be loaded
-            hasMore: (this.state.photos.length < 100),
+            hasMore: hasMore,
+            error: isError,
+            errorMsg: errorMsg,
             isLoading: false,
             photos: [
               ...this.state.photos,
@@ -111,12 +128,13 @@ class FlickrPhotos extends Component {
             ],
           });
         })
-        .catch((err) => {
-          this.setState({
-            error: err.message,
-            isLoading: false,
-           });
-        })
+        // .catch((err) => {
+        //   this.setState({
+        //     error: true,
+        //     errorMsg: err.message,
+        //     isLoading: false,
+        //    });
+        // })
     });
   }
 
@@ -127,6 +145,7 @@ class FlickrPhotos extends Component {
       hasMore,
       isLoading,
       photos,
+      errorMsg,
     } = this.state;
 
 
@@ -135,12 +154,10 @@ class FlickrPhotos extends Component {
         <div className="photoBox">
           <img src={photo.thumb} />
           <p>{photo.owner}</p>
-          <p>{photo.farm}</p>
-          <p>{photo.full}</p>
+          <p><a href={photo.full} target="_blank">View Photo</a></p>
           <p>{photo.title}</p>
           <p>{photo.tags}</p>
-          <p>{photo.tagLength}</p>
-          <p>{photo.date}</p>
+          <p><Moment unix>{photo.date}</Moment></p>
         </div>
       );
     });
@@ -148,10 +165,25 @@ class FlickrPhotos extends Component {
     return (
       <div>
 
+
         <form onSubmit={this.handleSubmit}>
               <input type="text" value={this.state.inputvalue} onChange={this.handleChange} />
               <input type="submit" value="Submit"/>
           </form>
+
+          {this.state.photos.length === 0 && (
+            <div id="endOfResults">
+              <p>Start youer search</p>
+            </div>
+          )}
+
+          {this.state.error && (
+            <div id="errorMsg">
+              <p>{this.state.errorMsg}</p>
+            </div>
+          )}
+
+
         <Masonry
           className={'photoContainer'} // default ''
           elementType={'div'} // default 'div'
@@ -162,7 +194,23 @@ class FlickrPhotos extends Component {
         >
           {childElements}
         </Masonry>
+        {this.state.isLoading && (
+          <div id="loading">
+            <div className="hollow-dots-spinner">
+              <div className="dot"></div>
+              <div className="dot"></div>
+              <div className="dot"></div>
+            </div>
+            <p>Loading ...</p>
+          </div>
+        )}
+        {!this.state.hasMore && (
+          <div id="endOfResults">
+            <p>NO MORE RESULTS</p>
+          </div>
+        )}
       </div>
+      
       );
     }
   }
