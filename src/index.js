@@ -151,34 +151,41 @@ class FlickrPhotos extends Component {
 
     const childElements = this.state.photos.map(function(photo){
       return (
+        
         <div className="photoBox">
           <img src={photo.thumb} />
-          <p>{photo.owner}</p>
-          <p><a href={photo.full} target="_blank">View Photo</a></p>
-          <p>{photo.title}</p>
-          <p>{photo.tags}</p>
-          <p><Moment unix>{photo.date}</Moment></p>
+          <div class="photoContent">
+            <p>{photo.owner}</p>
+            <p><a href={photo.full} target="_blank">View Photo</a></p>
+            <p>{photo.title}</p>
+            <p>{photo.tags}</p>
+            <p><Moment unix>{photo.date}</Moment></p>
+            </div>
         </div>
       );
     });
     
     return (
       <div>
-
+        <div className="container-fluid">
 
         <form onSubmit={this.handleSubmit}>
-              <input type="text" value={this.state.inputvalue} onChange={this.handleChange} />
-              <input type="submit" value="Submit"/>
+              <input type="text" value={this.state.inputvalue} onChange={this.handleChange} className="form-control" placeholder="type tag and press enter" />
+              
           </form>
 
           {this.state.photos.length === 0 && (
-            <div id="endOfResults">
-              <p>Start youer search</p>
+            <div class="row">
+            <div class="col-xs-12">
+              <div class="alert alert-warning" role="alert">
+                <p>Start your search and press enter</p>
+              </div>
+              </div>
             </div>
           )}
 
           {this.state.error && (
-            <div id="errorMsg">
+            <div class="alert alert-danger" role="alert">
               <p>{this.state.errorMsg}</p>
             </div>
           )}
@@ -205,10 +212,11 @@ class FlickrPhotos extends Component {
           </div>
         )}
         {!this.state.hasMore && (
-          <div id="endOfResults">
+          <div class="alert alert-warning" role="alert">
             <p>NO MORE RESULTS</p>
           </div>
         )}
+      </div>
       </div>
       
       );

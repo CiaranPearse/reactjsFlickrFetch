@@ -6,19 +6,34 @@
 }
 
 .photoContainer {
-	border: 1px solid red;
 }
 
 .photoBox {
-	border: 1px solid green;
 	width: 20%;
 	margin: 24px;
+	border: 1px solid black;
+	-webkit-border-radius: 10px;
+-moz-border-radius: 10px;
+border-radius: 10px;
 }
 
 .photoBox img {
 	width: 100%;
+	-webkit-border-top-left-radius: 10px;
+-webkit-border-top-right-radius: 10px;
+-moz-border-radius-topleft: 10px;
+-moz-border-radius-topright: 10px;
+border-top-left-radius: 10px;
+border-top-right-radius: 10px;
 }
 
+.photoContent {
+	padding: 4px 10px;
+}
+
+.card {
+	width: 100%;
+}
 
 /* Search Field */
 input.searchField {
