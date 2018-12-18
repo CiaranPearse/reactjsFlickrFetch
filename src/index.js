@@ -15,27 +15,32 @@ const imagesLoadedOptions = { background: '.my-bg-image-el' }
 class FlickrPhotos extends Component {
   constructor(props) {
     super(props);
+
     
     // Sets up our initial state
     this.state = {
       error: false,
       hasMore: true,
       isLoading: false,
-      users: [],
-      pageNumber: 1,
+      photos: [],
+      currentPage: 0,
       searchTerm: 'belvelly'
     };
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
 
     // Binds our scroll event handler
     window.onscroll = () => {
       const {
-        loadUsers,
+        loadPhotos,
         state: {
           error,
           isLoading,
           hasMore,
         },
       } = this;
+
 
       // Bails early if:
       // * there's an error
@@ -48,30 +53,43 @@ class FlickrPhotos extends Component {
         window.innerHeight + document.documentElement.scrollTop
         === document.documentElement.offsetHeight
       ) {
-        loadUsers();
+        loadPhotos();
       }
     };
   }
 
-  componentWillMount() {
-    // Loads some users on initial load
-    this.loadUsers();
+  handleChange (event) {
+    this.setState({
+        searchTerm: event.target.value
+    })
   }
 
-  loadUsers = () => {
+  handleSubmit (event) {
+      console.log('Form value: ' + this.state.searchTerm);
+      event.preventDefault();
+      this.setState({
+        currentPage: 1,
+        photos: []
+      })
+      this.loadPhotos()
+  }
+
+
+  loadPhotos = () => {
+    this.setState({ currentPage: this.state.currentPage + 1 }) 
     this.setState({ isLoading: true }, () => {
       request
-        .get('https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=6347d99644f5a2b060c5559e70ecbfbd&tags=' + this.state.searchTerm + '&extras=description%2C+license%2C+date_upload%2C+date_taken%2C+owner_name%2C+icon_server%2C+original_format%2C+last_update%2C+geo%2C+tags%2C+o_dims%2C+views%2C+media%2C+path_alias%2C+url_sq%2C+url_t%2C+url_s%2C+url_q%2C+url_m%2C+url_n%2C+url_z%2C+url_c%2C+url_l%2C+url_o&per_page=20&page=' + this.state.pageNumber + '&format=json&nojsoncallback=1')
+        .get('https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=6347d99644f5a2b060c5559e70ecbfbd&tags=' + this.state.searchTerm + '&extras=description%2C+license%2C+date_upload%2C+date_taken%2C+owner_name%2C+icon_server%2C+original_format%2C+last_update%2C+geo%2C+tags%2C+o_dims%2C+views%2C+media%2C+path_alias%2C+url_sq%2C+url_t%2C+url_s%2C+url_q%2C+url_m%2C+url_n%2C+url_z%2C+url_c%2C+url_l%2C+url_o&per_page=20&page=' + this.state.currentPage + '&format=json&nojsoncallback=1')
         .then((results) => {          
           console.log(results)
           const photoBatch = results.body.photos
           console.log(photoBatch)
           // Creates a massaged array of user data
-          const nextUsers = photoBatch.photo.map(user => ({
-            photoId: user.id,
-            owner: user.owner,
-            farm: user.farm,
-            thumb: user.url_n,
+          const nextPhotos = photoBatch.photo.map(photo => ({
+            photoId: photo.id,
+            owner: photo.owner,
+            farm: photo.farm,
+            thumb: photo.url_n,
             full: 'fullPhoto',
             title: 'title',
             tags: 'tags',
@@ -80,16 +98,16 @@ class FlickrPhotos extends Component {
             date: 'dateTaken'
           }));
 
-          // Merges the next users into our existing users
+          // Merges the next photos into our existing photos
           this.setState({
             // Note: Depending on the API you're using, this value may be
             // returned as part of the payload to indicate that there is no
             // additional data to be loaded
-            hasMore: (this.state.users.length < 100),
+            hasMore: (this.state.photos.length < 100),
             isLoading: false,
-            users: [
-              ...this.state.users,
-              ...nextUsers,
+            photos: [
+              ...this.state.photos,
+              ...nextPhotos,
             ],
           });
         })
@@ -100,43 +118,51 @@ class FlickrPhotos extends Component {
            });
         })
     });
-    this.setState({ pageNumber: this.state.pageNumber + 1 })
   }
+
 
   render() { 
     const {
       error,
       hasMore,
       isLoading,
-      users,
+      photos,
     } = this.state;
 
-    const childElements = this.state.users.map(function(user){
+
+    const childElements = this.state.photos.map(function(photo){
       return (
         <div className="photoBox">
-          <img src={user.thumb} />
-          <p>{user.owner}</p>
-          <p>{user.farm}</p>
-          <p>{user.full}</p>
-          <p>{user.title}</p>
-          <p>{user.tags}</p>
-          <p>{user.tagLength}</p>
-          <p>{user.date}</p>
+          <img src={photo.thumb} />
+          <p>{photo.owner}</p>
+          <p>{photo.farm}</p>
+          <p>{photo.full}</p>
+          <p>{photo.title}</p>
+          <p>{photo.tags}</p>
+          <p>{photo.tagLength}</p>
+          <p>{photo.date}</p>
         </div>
       );
     });
     
     return (
-      <Masonry
-        className={'photoContainer'} // default ''
-        elementType={'div'} // default 'div'
-        options={masonryOptions} // default {}
-        disableImagesLoaded={false} // default false
-        updateOnEachImageLoad={false} // default false and works only if disableImagesLoaded is false
-        imagesLoadedOptions={imagesLoadedOptions} // default {}
-      >
-        {childElements}
-      </Masonry>
+      <div>
+
+        <form onSubmit={this.handleSubmit}>
+              <input type="text" value={this.state.inputvalue} onChange={this.handleChange} />
+              <input type="submit" value="Submit"/>
+          </form>
+        <Masonry
+          className={'photoContainer'} // default ''
+          elementType={'div'} // default 'div'
+          options={masonryOptions} // default {}
+          disableImagesLoaded={false} // default false
+          updateOnEachImageLoad={false} // default false and works only if disableImagesLoaded is false
+          imagesLoadedOptions={imagesLoadedOptions} // default {}
+        >
+          {childElements}
+        </Masonry>
+      </div>
       );
     }
   }

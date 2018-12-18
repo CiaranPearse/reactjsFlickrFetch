@@ -18,3 +18,11 @@
 .photoBox img {
 	width: 100%;
 }
+
+
+/* Search Field */
+input.searchField {
+	width: 80%;
+	padding: 10px;
+	font-size: 16px;
+}
